@@ -18,6 +18,6 @@ handlers:
   mime_type: text/plain
 
 - url: /add
-  script: main.add
+  script: search.add
 - url: /
-  script: main.find
+  script: search.find
