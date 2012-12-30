@@ -8,49 +8,66 @@ from google.appengine.api import search
 INDEX_NAME = "nuts"
 
 
+def send_json(start_response, status, headers, data):
+	headers.append(("Content-Type", "application/json"))
+	start_response(status, headers)
+	return json.dumps(data)
+
+
 def find(environ, start_response):
 	"""Search nuts."""
 
-	if environ['REQUEST_METHOD'].upper() != 'GET':
-		start_response('405 Method Not Allowed', [('Allow', 'GET'), ('Content-Type', 'text/plain')])
-		return '405 Method Not Allowed: use GET'
+	response = {}
+
+	if environ["REQUEST_METHOD"].upper() != "GET":
+		response["Message"] = "405 Method Not Allowed: use GET"
+		return send_json(start_response, "405 Method Not Allowed", [("Allow", "GET")], response)
 
 	try:
-		q = urlparse.parse_qs(environ['QUERY_STRING'])['q'][0]
+		q = urlparse.parse_qs(environ["QUERY_STRING"])["q"][0]
 	except (KeyError, IndexError) as e:
 		logging.warning("Bad request: %r", e)
-		start_response('400 Bad Request', [('Content-Type', 'text/plain')])
-		return '400 Bad Request: %r' % e
+		response["Message"] = "400 Bad Request: %r" % e
+		return send_json(start_response, "400 Bad Request", [], response)
 
 	results = search.Index(name=INDEX_NAME).search(q)
 
-	start_response('200 OK', [('Content-type', 'application/json')])
-	response = []
+	response["Nuts"] = []
 	for res in results:
 		nut = {"Rank": res.rank}
 		for f in res.fields:
 			nut[f.name] = f.value
-		response.append(nut)
-	return json.dumps(response)
+		response["Nuts"].append(nut)
+	response["Message"] = "OK"
+	return send_json(start_response, "200 OK", [], response)
 
 
 def add(environ, start_response):
 	"""Add nut to search index."""
 
-	if environ['REQUEST_METHOD'].upper() != 'POST':
-		start_response('405 Method Not Allowed', [('Allow', 'POST'), ('Content-Type', 'text/plain')])
-		return '405 Method Not Allowed: use POST'
+	response = {}
 
-	data = json.load(environ['wsgi.input'])
+	if environ["REQUEST_METHOD"].upper() != "POST":
+		response["Message"] = "405 Method Not Allowed: use POST"
+		return send_json(start_response, "405 Method Not Allowed", [("Allow", "POST")], response)
 
-	fields = [
-		search.TextField(name="Name", value=data["Name"]),
-		search.TextField(name="Doc", value=(' '.join(data["Doc"].split(' ')[2:])))  # strip first words "Package <name>"
-	]
+	data = json.load(environ["wsgi.input"])
+	logging.info("Adding %r", data)
+
+	name = value=data["Nut"]["Name"]
+	doc = data["Nut"]["Doc"]
+	if doc.lower().startswith("package %s " % name.lower()):
+		doc = " ".join(doc.split(" ")[2:])
+	if doc.endswith("."):
+		doc = doc[:-1]
+
 	# TODO rank
-	doc = search.Document(doc_id=data["Name"], fields=fields)
+	fields = [
+		search.TextField(name="Name", value=name),
+		search.TextField(name="Doc",  value=doc),
+	]
+	d = search.Document(doc_id=name, fields=fields)
+	search.Index(name=INDEX_NAME).put(d)
 
-	search.Index(name=INDEX_NAME).put(doc)
-
-	start_response('201 Created', [])
-	return ''
+	response["Message"] = "OK"
+	return send_json(start_response, "201 Created", [], response)
