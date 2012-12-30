@@ -1,4 +1,5 @@
 import json
+import logging
 import urlparse
 
 from google.appengine.api import search
@@ -10,7 +11,16 @@ INDEX_NAME = "nuts"
 def find(environ, start_response):
 	"""Search nuts."""
 
-	q = urlparse.parse_qs(environ['QUERY_STRING'])['q'][0]
+	if environ['REQUEST_METHOD'].upper() != 'GET':
+		start_response('405 Method Not Allowed', [('Allow', 'GET'), ('Content-Type', 'text/plain')])
+		return '405 Method Not Allowed: use GET'
+
+	try:
+		q = urlparse.parse_qs(environ['QUERY_STRING'])['q'][0]
+	except (KeyError, IndexError) as e:
+		logging.warning("Bad request: %r", e)
+		start_response('400 Bad Request', [('Content-Type', 'text/plain')])
+		return '400 Bad Request: %r' % e
 
 	results = search.Index(name=INDEX_NAME).search(q)
 
@@ -27,6 +37,10 @@ def find(environ, start_response):
 def add(environ, start_response):
 	"""Add nut to search index."""
 
+	if environ['REQUEST_METHOD'].upper() != 'POST':
+		start_response('405 Method Not Allowed', [('Allow', 'POST'), ('Content-Type', 'text/plain')])
+		return '405 Method Not Allowed: use POST'
+
 	data = json.load(environ['wsgi.input'])
 
 	fields = [
@@ -40,16 +54,3 @@ def add(environ, start_response):
 
 	start_response('201 Created', [])
 	return ''
-
-
-def app(environ, start_response):
-	"""Simple router."""
-
-	method = environ['REQUEST_METHOD'].upper()
-	if method == 'GET':
-		return find(environ, start_response)
-	elif method == 'POST':
-		return add(environ, start_response)
-	else:
-		start_response('405 Method Not Allowed', [])
-		return ''

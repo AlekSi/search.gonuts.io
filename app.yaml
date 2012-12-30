@@ -16,5 +16,8 @@ handlers:
   static_files: public/robots.txt
   upload: public/robots.txt
   mime_type: text/plain
-- url: .*
-  script: main.app
+
+- url: /add
+  script: main.add
+- url: /
+  script: main.find
