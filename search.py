@@ -43,7 +43,12 @@ def find(environ, start_response):
 
 
 def add(environ, start_response):
-	"""Add nut to search index."""
+	"""
+	Add nut to search index.
+
+	Input: {"Nut": {"Name": "test_nut1",
+					"Doc": "Package test_nut1 is used to test nut."}}
+	"""
 
 	response = {}
 
@@ -54,8 +59,8 @@ def add(environ, start_response):
 	data = json.load(environ["wsgi.input"])
 	logging.info("Adding %r", data)
 
-	name = value=data["Nut"]["Name"]
-	doc = data["Nut"]["Doc"]
+	name = data["Nut"]["Name"]
+	doc  = data["Nut"]["Doc"]
 	if doc.lower().startswith("package %s " % name.lower()):
 		doc = " ".join(doc.split(" ")[2:])
 	if doc.endswith("."):
