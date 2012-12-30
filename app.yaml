@@ -19,5 +19,7 @@ handlers:
 
 - url: /add
   script: search.add
+  login: admin
+
 - url: /
   script: search.find
