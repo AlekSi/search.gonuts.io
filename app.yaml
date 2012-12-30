@@ -5,9 +5,16 @@ api_version: 1
 threadsafe: yes
 
 handlers:
+- url: /favicon\.ico
+  static_files: public/favicon.ico
+  upload: public/favicon.ico
+- url: /apple-touch-icon(.*)\.png
+  static_files: public/apple-touch-icon\1.png
+  upload: public/apple-touch-icon(.*).png
+
 - url: /robots\.txt
-  static_files: robots.txt
-  upload: robots.txt
+  static_files: public/robots.txt
+  upload: public/robots.txt
   mime_type: text/plain
 - url: .*
   script: main.app
