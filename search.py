@@ -5,6 +5,12 @@ import urlparse
 from google.appengine.api import search
 
 
+try:
+    from config import add_secret_token
+except ImportError:
+    add_secret_token = ''
+
+
 INDEX_NAME = "nuts"
 
 
@@ -55,6 +61,15 @@ def add(environ, start_response):
     if environ["REQUEST_METHOD"].upper() != "POST":
         response["Message"] = "405 Method Not Allowed: use POST"
         return send_json(start_response, "405 Method Not Allowed", [("Allow", "POST")], response)
+
+    try:
+        token = urlparse.parse_qs(environ["QUERY_STRING"])["token"][0]
+        if token != add_secret_token:
+            raise KeyError(token)
+    except (KeyError, IndexError) as e:
+        logging.warning("Bad token: %r", e)
+        response["Message"] = "403 Forbidden: bad token"
+        return send_json(start_response, "403 Forbidden", [], response)
 
     data = json.load(environ["wsgi.input"])
     logging.info("Adding %r", data)
