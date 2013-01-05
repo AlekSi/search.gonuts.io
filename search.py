@@ -21,7 +21,20 @@ def send_json(start_response, status, headers, data):
 
 
 def find(environ, start_response):
-    """Search nuts."""
+    """
+    Search nuts.
+
+    Input: q.
+    Output:
+        {
+          "Message": "OK",
+          "Nuts": [
+            {
+              "Name": "test_nut1"
+            }
+          ]
+        }
+    """
 
     response = {}
 
@@ -52,8 +65,13 @@ def add(environ, start_response):
     """
     Add nut to search index.
 
-    Input: {"Nut": {"Name": "test_nut1",
-                    "Doc": "Package test_nut1 is used to test nut."}}
+    Input:
+        {
+          "Nut": {
+            "Name": "test_nut1",
+            "Doc": "Package test_nut1 is used to test nut."
+          }
+        }
     """
 
     response = {}
