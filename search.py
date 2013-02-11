@@ -6,9 +6,9 @@ from google.appengine.api import search
 
 
 try:
-    from config import add_secret_token
+    from config import secret_token
 except ImportError:
-    add_secret_token = ''
+    secret_token = ''
 
 
 INDEX_NAME = "nuts"
@@ -82,7 +82,7 @@ def add(environ, start_response):
 
     try:
         token = urlparse.parse_qs(environ["QUERY_STRING"])["token"][0]
-        if token != add_secret_token:
+        if token != secret_token:
             raise KeyError(token)
     except (KeyError, IndexError) as e:
         logging.warning("Bad token: %r", e)

@@ -1,1 +1,1 @@
-add_secret_token = 'secret_string'
+secret_token = 'secret_string'
