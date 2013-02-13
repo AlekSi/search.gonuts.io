@@ -19,5 +19,7 @@ handlers:
 
 - url: /add
   script: search.add
+- url: /remove
+  script: search.remove
 - url: /
   script: search.find

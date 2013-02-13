@@ -11,14 +11,19 @@ except ImportError:
     secret_token = ''
 
 
-INDEX_NAME = "nuts"
+INDEX = search.Index(name="nuts")
 NO_RESPONSE_SENT = object()
 
 
 def send_json(start_response, status, headers, data):
+    res = ''
+    if data is not None:
+        res = json.dumps(data)
+
     headers.append(("Content-Type", "application/json"))
+    headers.append(("Content-Length", str(len(res))))
     start_response(status, headers)
-    return json.dumps(data)
+    return res
 
 
 def check_method(environ, start_response, expected_method):
@@ -62,18 +67,15 @@ def find(environ, start_response):
     if res is not NO_RESPONSE_SENT:
         return res
 
-    response = {}
-
     try:
         q = urlparse.parse_qs(environ["QUERY_STRING"])["q"][0]
     except (KeyError, IndexError) as e:
         logging.warning("Bad request: %r", e)
-        response["Message"] = "400 Bad Request: %r" % e
-        return send_json(start_response, "400 Bad Request", [], response)
+        return send_json(start_response, "400 Bad Request", [], {"Message": "400 Bad Request: %r" % e})
 
-    results = search.Index(name=INDEX_NAME).search(q)
+    results = INDEX.search(q)
 
-    response["Nuts"] = []
+    response = {"Nuts": []}
     for res in results:
         nut = {"Rank": res.rank}
         for f in res.fields:
@@ -102,8 +104,6 @@ def add(environ, start_response):
     if res is not NO_RESPONSE_SENT:
         return res
 
-    response = {}
-
     data = json.load(environ["wsgi.input"])
     logging.info("Adding %r", data)
 
@@ -120,7 +120,31 @@ def add(environ, start_response):
         search.TextField(name="Doc",  value=doc),
     ]
     d = search.Document(doc_id=name, fields=fields)
-    search.Index(name=INDEX_NAME).put(d)
+    INDEX.put(d)
 
-    response["Message"] = "OK"
-    return send_json(start_response, "201 Created", [], response)
+    return send_json(start_response, "201 Created", [], {"Message": "OK"})
+
+
+def remove(environ, start_response):
+    """
+    Remove nut from search index.
+
+    Input: nut_name.
+    """
+
+    res = check_method(environ, start_response, "DELETE")
+    if res is NO_RESPONSE_SENT:
+        res = check_secret_token(environ, start_response)
+    if res is not NO_RESPONSE_SENT:
+        return res
+
+    try:
+        nut_name = urlparse.parse_qs(environ["QUERY_STRING"])["nut_name"][0]
+    except (KeyError, IndexError) as e:
+        logging.warning("Bad request: %r", e)
+        return send_json(start_response, "400 Bad Request", [], {"Message": "400 Bad Request: %r" % e})
+
+    logging.info("Removing %r", nut_name)
+    INDEX.delete(nut_name)
+
+    return send_json(start_response, '204 No Content', [], None)
