@@ -1,5 +1,5 @@
 application: search-gonuts-io
-version: 1
+version: dev
 runtime: python27
 api_version: 1
 threadsafe: yes
@@ -19,5 +19,7 @@ handlers:
 
 - url: /add
   script: search.add
+- url: /remove
+  script: search.remove
 - url: /
   script: search.find
