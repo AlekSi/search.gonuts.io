@@ -57,6 +57,7 @@ def find(environ, start_response):
           "Message": "OK",
           "Nuts": [
             {
+              "Vendor": "AlekSi",
               "Name": "test_nut1"
             }
           ]
@@ -92,6 +93,7 @@ def add(environ, start_response):
     Input:
         {
           "Nut": {
+            "Vendor": "AlekSi",
             "Name": "test_nut1",
             "Doc": "Package test_nut1 is used to test nut."
           }
@@ -107,6 +109,7 @@ def add(environ, start_response):
     data = json.load(environ["wsgi.input"])
     logging.info("Adding %r", data)
 
+    vendor = data["Nut"]["Vendor"]
     name = data["Nut"]["Name"]
     doc  = data["Nut"]["Doc"]
     if doc.lower().startswith("package %s " % name.lower()):
@@ -116,10 +119,12 @@ def add(environ, start_response):
 
     # TODO rank
     fields = [
+        search.TextField(name="Vendor", value=vendor),
         search.TextField(name="Name", value=name),
         search.TextField(name="Doc",  value=doc),
     ]
-    d = search.Document(doc_id=name, fields=fields)
+    doc_id = "%s/%s" % (vendor, name)
+    d = search.Document(doc_id=doc_id, fields=fields)
     INDEX.put(d)
 
     return send_json(start_response, "201 Created", [], {"Message": "OK"})
@@ -129,22 +134,27 @@ def remove(environ, start_response):
     """
     Remove nut from search index.
 
-    Input: nut_name.
+    Input:
+        {
+          "Nut": {
+            "Vendor": "AlekSi",
+            "Name": "test_nut1"
+          }
+        }
     """
 
-    res = check_method(environ, start_response, "DELETE")
+    res = check_method(environ, start_response, "POST")
     if res is NO_RESPONSE_SENT:
         res = check_secret_token(environ, start_response)
     if res is not NO_RESPONSE_SENT:
         return res
 
-    try:
-        nut_name = urlparse.parse_qs(environ["QUERY_STRING"])["nut_name"][0]
-    except (KeyError, IndexError) as e:
-        logging.warning("Bad request: %r", e)
-        return send_json(start_response, "400 Bad Request", [], {"Message": "400 Bad Request: %r" % e})
+    data = json.load(environ["wsgi.input"])
+    logging.info("Removing %r", data)
 
-    logging.info("Removing %r", nut_name)
-    INDEX.delete(nut_name)
+    vendor = data["Nut"]["Vendor"]
+    name = data["Nut"]["Name"]
+    doc_id = "%s/%s" % (vendor, name)
+    INDEX.delete(doc_id)
 
     return send_json(start_response, '204 No Content', [], None)
