@@ -57,7 +57,7 @@ def find(environ, start_response):
           "Message": "OK",
           "Nuts": [
             {
-              "Vendor": "AlekSi",
+              "Vendor": "aleksi",
               "Name": "test_nut1"
             }
           ]
@@ -93,7 +93,7 @@ def add(environ, start_response):
     Input:
         {
           "Nut": {
-            "Vendor": "AlekSi",
+            "Vendor": "aleksi",
             "Name": "test_nut1",
             "Doc": "Package test_nut1 is used to test nut."
           }
@@ -137,7 +137,7 @@ def remove(environ, start_response):
     Input:
         {
           "Nut": {
-            "Vendor": "AlekSi",
+            "Vendor": "aleksi",
             "Name": "test_nut1"
           }
         }
