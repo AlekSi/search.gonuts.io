@@ -21,5 +21,8 @@ handlers:
   script: search.add
 - url: /remove
   script: search.remove
+- url: /remove_all
+  script: search.remove_all
+  login: admin
 - url: /
   script: search.find

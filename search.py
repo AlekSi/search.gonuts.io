@@ -158,3 +158,14 @@ def remove(environ, start_response):
     INDEX.delete(doc_id)
 
     return send_json(start_response, '204 No Content', [], None)
+
+
+def remove_all(environ, start_response):
+    while True:
+        doc_ids = [doc.doc_id for doc in INDEX.get_range(ids_only=True)]
+        if not doc_ids:
+            break
+        logging.info("Removing IDs %r", doc_ids)
+        INDEX.delete(doc_ids)
+
+    return send_json(start_response, '204 No Content', [], None)
