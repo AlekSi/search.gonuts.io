@@ -1,4 +1,4 @@
-SDKROOT:=/usr/local/Cellar/google-app-engine/1.7.5/share/google-app-engine
+SDKROOT:=/usr/local/Cellar/google-app-engine/1.7.6/share/google-app-engine
 
 run:
 	$(SDKROOT)/dev_appserver.py -p 8081 --skip_sdk_update_check --use_sqlite .
